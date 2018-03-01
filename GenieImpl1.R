@@ -28,22 +28,30 @@ for(vv in V(G)){
 # ========================================
 # Algo: Compute all H using adaptive path layers
 # ========================================
-sigmoid <- function(MAT){
+sigmoid <- function(X){
+  sigmoid.scalar <- function(x){
+    if(x >  99){ return(1) }
+    if(x < -99){ return(0) }
+    return( 1/(1+exp(-x)) )    
+  }
   # input check
-  stopifnot(class(MAT) == "matrix") # The W'h operations will result in a matrix.
+  if(class(X) == "matrix"){ # The W'h operations will result in a matrix.
+      #
+      # We need to check if the input number to sigmoid is too large, and threshold if so.
+      # Since we need an IF condition, we cannot apply a function to a matrix, as in f(matrix);
+      #  instead, we must apply over the matrix's appropriate dimensions
+      # Hence, the first step is to figure out the dimensions
+      validDims <- which(dim(X) > 1) 
+      print(validDims)
+      retMat <- apply(X, validDims, sigmoid.scalar)
+      return(retMat)
+  }
   #
-  # We need to check if the input is too big, and threshold
-  # Since we need an IF condition, we cannot apply a function to a matrix directly
-  #  instead, we must apply over the matrix's appropriate dimensions
-  #  
-  validDims <- which(dim(MAT) > 1) # if first is bigger, it's a column matrix
-  retMat <- apply(MAT, validDims, function(arg){
-    if(arg >  99){ return(1) }
-    if(arg < -99){ return(0) }
-    return( 1/(1+exp(-arg)) )
-  })
-  return(retMat)
-  
+  #
+  #
+  if(class(X) == "numeric"){
+      return(sigmoid.scalar(X))
+  }
 }
 
-
+sigmoid(matrix(nrow = 2, ncol = 2, byrow = TRUE, data = c(-3, 0, 1, 3)))
