@@ -9,16 +9,19 @@ library(igraph)
 # ========================================
 # Create toy data
 # ========================================
+set.seed(17)
 N <- 20
 D <- 3 # number features
-totalHops <- 3 
-hiddenDim <- 4
+TOTAL_LAYERS <- 3 
+HIDDEN_DIM <- 4
 # Create random graphs from igraph
 G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
 A <- as.matrix(as_adj(G))
-# Insert attribute vectors
-G <- set_vertex_attr(G, "node_attrs", index = V(G), list())
 #
-# Enter raw data values
-
-
+# Initialize attribute lists
+# 
+for(vv in V(G)){
+  Hmat <- matrix(nrow = D, ncol = TOTAL_LAYERS, data = NA)
+  Hmat[,1] <- rnorm(D, 0, 3)
+  V(G)[vv]$vertex_attr <- list(Hmat) # igraph does not accept a matrix-attribute unless you specify it as a list
+}
