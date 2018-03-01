@@ -25,3 +25,25 @@ for(vv in V(G)){
   Hmat[,1] <- rnorm(D, 0, 3)
   V(G)[vv]$vertex_attr <- list(Hmat) # igraph does not accept a matrix-attribute unless you specify it as a list
 }
+# ========================================
+# Algo: Compute all H using adaptive path layers
+# ========================================
+sigmoid <- function(MAT){
+  # input check
+  stopifnot(class(MAT) == "matrix") # The W'h operations will result in a matrix.
+  #
+  # We need to check if the input is too big, and threshold
+  # Since we need an IF condition, we cannot apply a function to a matrix directly
+  #  instead, we must apply over the matrix's appropriate dimensions
+  #  
+  validDims <- which(dim(MAT) > 1) # if first is bigger, it's a column matrix
+  retMat <- apply(MAT, validDims, function(arg){
+    if(arg >  99){ return(1) }
+    if(arg < -99){ return(0) }
+    return( 1/(1+exp(-arg)) )
+  })
+  return(retMat)
+  
+}
+
+
