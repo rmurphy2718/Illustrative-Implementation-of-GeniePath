@@ -40,7 +40,7 @@ sigmoid <- function(X){
 initMatrices <- function(numUpdates, numrows, numcols){
   ll <- list()
   for(ii in 1:numUpdates){
-    ll[[ii]] <- matrix(nrow = numrows, ncol = numcols, data = rnorm(numrows*numcols, 0, 5))
+    ll[[ii]] <- matrix(nrow = numrows, ncol = numcols, data = rnorm(numrows*numcols, 0, 0.4))
   }
   return(ll)
 }
@@ -66,7 +66,7 @@ runAlgo <- function(N, updates, hiddenDim){
 # Softmax function
 # 
 softmax.vec <- function(X){
-    if(class(X) == "matrix" && max(dim(X)) > 1 ){
+    if(class(X) == "matrix" && all(dim(X) > 1 ) ){
         stop("Enter a vector")
     }
     return(
@@ -84,7 +84,7 @@ softmax.vec <- function(X){
 # (3) Apply another dot product that "learns" how to interpret the embedding
 #       and determine importance
 # 
-alpha <- function(v, nbers.v, tt, Ws, Wt, v){
+alpha <- function(v, nbers.v, tt, Ws, Wt, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
     num.nbers <- length(nbers.v)
     ##### A matricized implementation
     # Get hidden vector h_i for v at time t
@@ -96,15 +96,13 @@ alpha <- function(v, nbers.v, tt, Ws, Wt, v){
     Y <- matrix(nrow = num.nbers, ncol = ncol(X))
     ro <- 1
     for(uu in nbers.v){
-        Y[ro, ] <- V(G)[uu]$vertex_attr
+        Y[ro, ] <- V(G)[uu]$vertex_attr[[1]][, tt]
         ro <- ro + 1
     }
     #
     # Compute the heart of equation (8)
     EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed embedding of these two hidden vectors
-    return(softmax.vec(EMBED %*% v))
-
-
-} 
+    return(softmax.vec(EMBED %*% v.weight))
+}
 
 runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
