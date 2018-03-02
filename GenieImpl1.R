@@ -14,18 +14,43 @@ N <- 20
 TOTAL_LAYERS <- 3 # I am including h^(0).  So 3 layers means 2 updates
 UPDATES <- TOTAL_LAYERS - 1 # capital T from the paper
 HIDDEN_DIM <- 4 # assume for now that hidden dim is same as data dim
-# Create random graphs from igraph
+#
+# Create random graph from igraph
+#
 while(TRUE){ # If R had "do-while", that's what I'd use
     G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
     if(components(G)$no == 1){
       break; 
     }
 }
-
 A <- as.matrix(as_adj(G))
-#
+# -----------------------------
+# Create isomorphism
+# -----------------------------
+rowSwaps <- function(mat, swapsMat){
+  # swapsMat holds the rows we want to switch
+  # do input checking on it
+  stopifnot(class(swapsMat)=="matrix" && ncol(swapsMat) == 2)
+  #
+  for(rr in 1:nrow(swapsMat)){
+    ii <- swapsMat[rr, 1] # first index in swap
+    jj <- swapsMat[rr, 2] # second index
+    tmpRow <- mat[ii, ]
+    mat[ii, ] <- mat[jj, ]
+    mat[jj, ] <- tmpRow
+  }
+  return(mat)
+}
+
+# Make permutation matrix
+P <- diag(N)
+swaps <- rbind(c(2,4), c(3, 9))
+P <- rowSwaps(mat = P, swapsMat = swaps)
+
+
+# -----------------------------
 # Initialize attribute lists
-# 
+# -----------------------------
 for(vv in V(G)){
   Hmat <- matrix(nrow = HIDDEN_DIM, ncol = TOTAL_LAYERS, data = NA)
   Hmat[,1] <- rnorm(HIDDEN_DIM, 0, 3)
