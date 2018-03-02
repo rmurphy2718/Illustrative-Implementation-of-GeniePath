@@ -15,7 +15,13 @@ TOTAL_LAYERS <- 3 # I am including h^(0).  So 3 layers means 2 updates
 UPDATES <- TOTAL_LAYERS - 1 # capital T from the paper
 HIDDEN_DIM <- 4 # assume for now that hidden dim is same as data dim
 # Create random graphs from igraph
-G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
+while(TRUE){ # If R had "do-while", that's what I'd use
+    G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
+    if(components(G)$no == 1){
+      break; 
+    }
+}
+
 A <- as.matrix(as_adj(G))
 #
 # Initialize attribute lists
@@ -23,10 +29,12 @@ A <- as.matrix(as_adj(G))
 for(vv in V(G)){
   Hmat <- matrix(nrow = HIDDEN_DIM, ncol = TOTAL_LAYERS, data = NA)
   Hmat[,1] <- rnorm(HIDDEN_DIM, 0, 3)
+  # I am ignoring h^(0) = WX, and just simulating h^(0) directly..
   V(G)[vv]$vertex_attr <- list(Hmat) # igraph does not accept a matrix-attribute unless you specify it as a list
 }
 # ========================================
 # Algo: Compute all H using adaptive path layers
+# I am ignoring h^(0) = WX, and just simulating h^(0) directly..
 # ========================================
 sigmoid <- function(X){
   sigmoid.scalar <- function(x){
@@ -47,8 +55,6 @@ sigmoid <- function(X){
       return(retMat)
   }
   #
-  #
-  #
   if(class(X) == "numeric"){
       return(sigmoid.scalar(X))
   }
@@ -67,4 +73,14 @@ runAlgo <- function(){
   # >> This means (number units in) = (number units out)
   # Equiv, we don't need a new programming parameter, just "NUMBER HIDDEN"
   W <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wi <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wf <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wo <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wc <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wd <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Ws <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  v.weight <- matrix(ncol = 1, data = rnorm(HIDDEN_DIM, 0, 3))
+  #
+  #
+  #
 }
