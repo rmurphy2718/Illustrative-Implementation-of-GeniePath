@@ -73,5 +73,38 @@ softmax.vec <- function(X){
         exp(X - log(sum(exp(X))))
     )
 }
+#
+# Alpha function
+#  >> Attention function
+# alpha(v, neighbors(v)) -> a numeric (probability) vector giving importance of each neighbor
+#
+# Explanation of this function, alpha(x,y) from the paper
+# (1) Project x and y into some embedding with Wx and Wy
+# (2) Squash them into the range -1 to 1 with tanh
+# (3) Apply another dot product that "learns" how to interpret the embedding
+#       and determine importance
+# 
+alpha <- function(v, nbers.v, tt, Ws, Wt, v){
+    num.nbers <- length(nbers.v)
+    ##### A matricized implementation
+    # Get hidden vector h_i for v at time t
+    h.i <- v$vertex_attr[[1]][, tt]
+    # Put in matrix so that each row is the same
+    X <- matrix(nrow = num.nbers, byrow = TRUE,
+                 data = rep(h.i, num.nbers))
+    # Get hidden vectors of each neighbor, then put into a matrix
+    Y <- matrix(nrow = num.nbers, ncol = ncol(X))
+    ro <- 1
+    for(uu in nbers.v){
+        Y[ro, ] <- V(G)[uu]$vertex_attr
+        ro <- ro + 1
+    }
+    #
+    # Compute the heart of equation (8)
+    EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed embedding of these two hidden vectors
+    return(softmax.vec(EMBED %*% v))
+
+
+} 
 
 runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
