@@ -11,9 +11,9 @@ library(igraph)
 # ========================================
 set.seed(17)
 N <- 20
-D <- 3 # number features
-TOTAL_LAYERS <- 3 
-HIDDEN_DIM <- 4
+TOTAL_LAYERS <- 3 # I am including h^(0).  So 3 layers means 2 updates
+UPDATES <- TOTAL_LAYERS - 1 # capital T from the paper
+HIDDEN_DIM <- 4 # assume for now that hidden dim is same as data dim
 # Create random graphs from igraph
 G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
 A <- as.matrix(as_adj(G))
@@ -21,8 +21,8 @@ A <- as.matrix(as_adj(G))
 # Initialize attribute lists
 # 
 for(vv in V(G)){
-  Hmat <- matrix(nrow = D, ncol = TOTAL_LAYERS, data = NA)
-  Hmat[,1] <- rnorm(D, 0, 3)
+  Hmat <- matrix(nrow = HIDDEN_DIM, ncol = TOTAL_LAYERS, data = NA)
+  Hmat[,1] <- rnorm(HIDDEN_DIM, 0, 3)
   V(G)[vv]$vertex_attr <- list(Hmat) # igraph does not accept a matrix-attribute unless you specify it as a list
 }
 # ========================================
@@ -54,4 +54,17 @@ sigmoid <- function(X){
   }
 }
 
-sigmoid(matrix(nrow = 2, ncol = 2, byrow = TRUE, data = c(-3, 0, 1, 3)))
+initMatrices <- function(numUpdates, numrows, numcols){
+  ll <- list()
+  for(ii in 1:numUpdates){
+    ll[[ii]] <- matrix(nrow = numrows, ncol = numcols, data = rnorm(numrows*numcols, 0, 5))
+  }
+  return(ll)
+}
+runAlgo <- function(){
+  # Generate weight matrix lists
+  # Assume weight matrices are square for now
+  # >> This means (number units in) = (number units out)
+  # Equiv, we don't need a new programming parameter, just "NUMBER HIDDEN"
+  W <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+}
