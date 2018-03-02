@@ -88,7 +88,12 @@ alpha <- function(v, nbers.v, tt, Ws, Wd, v.weight){ # v.weight is just a weight
     #
     # Compute the heart of equation (8)
     EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed embedding of these two hidden vectors
-    return(softmax.vec(EMBED %*% v.weight))
+    return(
+      list(
+        attn = softmax.vec(EMBED %*% v.weight),
+        h.nber.mat = Y
+      )
+    )
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Main
@@ -113,7 +118,23 @@ runAlgo <- function(N, updates, hiddenDim){
       for(ii in 1:N){
           # Compute alpha masks
           vv <- V(G)[ii]
-          attn <- alpha(vv, neighbors(G, vv), tt, Ws, Wd, v.weight)
+          alph.ret <- alpha(vv, neighbors(G, vv), tt, Ws, Wd, v.weight)
+          attn <- alph.ret$attn
+          h.nber.mat <- alph.ret$h.nber.mat # rows are for each vector
+          #
+          # Apply mask to each neighbor attribute
+          # (
+          #   note:
+          #   using as.numeric makes sure we get
+          #   element 1 attn * row 1 h.nber.mat
+          # )
+          stopifnot(nrow(attn) == nrow(h.nber.mat))
+          nber.mask <- as.numeric(attn) * h.nber.mat
+          # 
+          # Sum up nbers
+          summedNbers <- colSums(nber.mask) 
+          # finall, get htemp
+          h.temp <- summedNbers %*% W[[tt]]
       }
   }
 }
