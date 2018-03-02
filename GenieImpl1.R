@@ -5,58 +5,9 @@
 # "GeniePath: Graph Neural Networks with Adaptive Receptive Paths"
 # Ziqi Liu et al, currently on arXiv.
 ############################################################
+setwd("/media/TI10716100D/_Files/1_Purdue/_Research/Network_Brain/CONVOLUTIONAL_NNET_GRAPHS/GeniePath/GeniePath_BasicImpl/GeniePath_BasicImpl")
 library(igraph)
-# ========================================
-# Create toy data
-# ========================================
-set.seed(17)
-N <- 20
-TOTAL_LAYERS <- 3 # I am including h^(0).  So 3 layers means 2 updates
-UPDATES <- TOTAL_LAYERS - 1 # capital T from the paper
-HIDDEN_DIM <- 4 # assume for now that hidden dim is same as data dim
-#
-# Create random graph from igraph
-#
-while(TRUE){ # If R had "do-while", that's what I'd use
-    G <- erdos.renyi.game(n = N, p = "0.4", mode = "undirected")
-    if(components(G)$no == 1){
-      break; 
-    }
-}
-A <- as.matrix(as_adj(G))
-# -----------------------------
-# Create isomorphism
-# -----------------------------
-rowSwaps <- function(mat, swapsMat){
-  # swapsMat holds the rows we want to switch
-  # do input checking on it
-  stopifnot(class(swapsMat)=="matrix" && ncol(swapsMat) == 2)
-  #
-  for(rr in 1:nrow(swapsMat)){
-    ii <- swapsMat[rr, 1] # first index in swap
-    jj <- swapsMat[rr, 2] # second index
-    tmpRow <- mat[ii, ]
-    mat[ii, ] <- mat[jj, ]
-    mat[jj, ] <- tmpRow
-  }
-  return(mat)
-}
-
-# Make permutation matrix
-P <- diag(N)
-swaps <- rbind(c(2,4), c(3, 9))
-P <- rowSwaps(mat = P, swapsMat = swaps)
-
-
-# -----------------------------
-# Initialize attribute lists
-# -----------------------------
-for(vv in V(G)){
-  Hmat <- matrix(nrow = HIDDEN_DIM, ncol = TOTAL_LAYERS, data = NA)
-  Hmat[,1] <- rnorm(HIDDEN_DIM, 0, 3)
-  # I am ignoring h^(0) = WX, and just simulating h^(0) directly..
-  V(G)[vv]$vertex_attr <- list(Hmat) # igraph does not accept a matrix-attribute unless you specify it as a list
-}
+library(hashmap)
 # ========================================
 # Algo: Compute all H using adaptive path layers
 # I am ignoring h^(0) = WX, and just simulating h^(0) directly..
@@ -92,7 +43,8 @@ initMatrices <- function(numUpdates, numrows, numcols){
   }
   return(ll)
 }
-runAlgo <- function(){
+
+runAlgo <- function(N, updates, hiddenDim){
   # Generate weight matrix lists
   # Assume weight matrices are square for now
   # >> This means (number units in) = (number units out)
@@ -109,3 +61,5 @@ runAlgo <- function(){
   #
   #
 }
+
+runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
