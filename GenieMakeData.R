@@ -11,9 +11,6 @@
 # This file makes 2 isomorphic graphs w/ vertex attributes that can be used
 #
 ############################################################
-setwd("/media/TI10716100D/_Files/1_Purdue/_Research/Network_Brain/CONVOLUTIONAL_NNET_GRAPHS/GeniePath/GeniePath_BasicImpl/GeniePath_BasicImpl")
-library(igraph)
-library(hashmap)
 # ========================================
 # Create toy data
 # ========================================

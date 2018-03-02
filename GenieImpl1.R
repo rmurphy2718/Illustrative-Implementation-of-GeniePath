@@ -8,6 +8,7 @@
 setwd("/media/TI10716100D/_Files/1_Purdue/_Research/Network_Brain/CONVOLUTIONAL_NNET_GRAPHS/GeniePath/GeniePath_BasicImpl/GeniePath_BasicImpl")
 library(igraph)
 library(hashmap)
+source("GenieMakeData.R")
 # ========================================
 # Algo: Compute all H using adaptive path layers
 # I am ignoring h^(0) = WX, and just simulating h^(0) directly..
@@ -60,6 +61,17 @@ runAlgo <- function(N, updates, hiddenDim){
   #
   #
   #
+}
+#
+# Softmax function
+# 
+softmax.vec <- function(X){
+    if(class(X) == "matrix" && max(dim(X)) > 1 ){
+        stop("Enter a vector")
+    }
+    return(
+        exp(X - log(sum(exp(X))))
+    )
 }
 
 runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
