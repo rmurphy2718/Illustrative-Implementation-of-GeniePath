@@ -13,6 +13,9 @@ source("GenieMakeData.R")
 # Algo: Compute all H using adaptive path layers
 # I am ignoring h^(0) = WX, and just simulating h^(0) directly..
 # ========================================
+# ~~~ 
+# Helper functions
+# ~~~ 
 sigmoid <- function(X){
   sigmoid.scalar <- function(x){
     if(x >  99){ return(1) }
@@ -44,24 +47,6 @@ initMatrices <- function(numUpdates, numrows, numcols){
   }
   return(ll)
 }
-
-runAlgo <- function(N, updates, hiddenDim){
-  # Generate weight matrix lists
-  # Assume weight matrices are square for now
-  # >> This means (number units in) = (number units out)
-  # Equiv, we don't need a new programming parameter, just "NUMBER HIDDEN"
-  W <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Wi <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Wf <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Wo <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Wc <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Wd <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  Ws <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
-  v.weight <- matrix(ncol = 1, data = rnorm(HIDDEN_DIM, 0, 3))
-  #
-  #
-  #
-}
 #
 # Softmax function
 # 
@@ -73,6 +58,7 @@ softmax.vec <- function(X){
         exp(X - log(sum(exp(X))))
     )
 }
+
 #
 # Alpha function
 #  >> Attention function
@@ -84,7 +70,7 @@ softmax.vec <- function(X){
 # (3) Apply another dot product that "learns" how to interpret the embedding
 #       and determine importance
 # 
-alpha <- function(v, nbers.v, tt, Ws, Wt, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
+alpha <- function(v, nbers.v, tt, Ws, Wd, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
     num.nbers <- length(nbers.v)
     ##### A matricized implementation
     # Get hidden vector h_i for v at time t
@@ -103,6 +89,33 @@ alpha <- function(v, nbers.v, tt, Ws, Wt, v.weight){ # v.weight is just a weight
     # Compute the heart of equation (8)
     EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed embedding of these two hidden vectors
     return(softmax.vec(EMBED %*% v.weight))
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Main
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+runAlgo <- function(N, updates, hiddenDim){
+  # Generate weight matrix lists
+  # Assume weight matrices are square for now
+  # >> This means (number units in) = (number units out)
+  # Equiv, we don't need a new programming parameter, just "NUMBER HIDDEN"
+  W  <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wi <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wf <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wo <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wc <- initMatrices(numUpdates = UPDATES, numrows = HIDDEN_DIM, numcols = HIDDEN_DIM)
+  Wd <- matrix(nrow = HIDDEN_DIM, ncol = HIDDEN_DIM, data = rnorm(HIDDEN_DIM*HIDDEN_DIM, 0, 0.4))
+  Ws <- matrix(nrow = HIDDEN_DIM, ncol = HIDDEN_DIM, data = rnorm(HIDDEN_DIM*HIDDEN_DIM, 0, 0.4))
+  v.weight <- matrix(ncol = 1, data = rnorm(HIDDEN_DIM, 0, 3))
+  #
+  #
+  #
+  for(tt in 1:updates)
+      for(ii in 1:N){
+          # Compute alpha masks
+          vv <- V(G)[ii]
+          attn <- alpha(vv, neighbors(G, vv), tt, Ws, Wd, v.weight)
+      }
+  }
 }
 
 runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
