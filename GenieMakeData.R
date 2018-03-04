@@ -25,7 +25,7 @@ HIDDEN_DIM <- 4 # assume for now that hidden dim is same as data dim
 # Create random graph from igraph
 #
 while(TRUE){ # If R had "do-while", that's what I'd use
-  G <- erdos.renyi.game(n = N, p = 0.1, mode = "undirected")
+  G <- erdos.renyi.game(n = N, p = 0.4, mode = "undirected")
   if(components(G)$no == 1){
     break; 
   }

@@ -99,7 +99,9 @@ alpha <- function(v, G, tt, Ws, Wd, v.weight){ # v.weight is just a weight param
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Main
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-runAlgo <- function(N, updates, hiddenDim){
+runAlgo <- function(G, updates, hiddenDim){
+  set.seed(3)
+  N <- length(V(G))
   # Generate weight matrix lists
   # Assume weight matrices are square for now
   # >> This means (number units in) = (number units out)
@@ -156,6 +158,20 @@ runAlgo <- function(N, updates, hiddenDim){
           V(G)[ii]$vertex_attr[[1]][, tt + 1] <- o.gate * tanh(CC[[tt + 1]][ii,])
     }
   }
+  return(G)
 }
 
-runAlgo(N=N, updates = UPDATES, hiddenDim = HIDDEN_DIM)
+G.new <- runAlgo(G=G, updates = UPDATES, hiddenDim = HIDDEN_DIM)
+G.prime.new <- runAlgo(G=G.prime, updates = UPDATES, hiddenDim = HIDDEN_DIM)
+
+# Compare hidden states in G.new and G.prime.new
+compare <- function(i, j){
+  all.equal(V(G.new)[i]$vertex_attr,
+      V(G.prime.new)[j]$vertex_attr)
+}
+compare(1,1) # Should be true
+compare(20,20)
+compare(2,4) # Should be true
+compare(3,9) # Should be true
+compare(5,6) # Should be false
+compare(6,8) # Should be false
