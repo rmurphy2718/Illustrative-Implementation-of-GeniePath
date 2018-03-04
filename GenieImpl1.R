@@ -1,3 +1,4 @@
+#!/usr/bin/R
 ############################################################
 # GenieImpl1.R
 # Ryan Murphy
@@ -30,7 +31,6 @@ sigmoid <- function(X){
       #  instead, we must apply over the matrix's appropriate dimensions
       # Hence, the first step is to figure out the dimensions
       validDims <- which(dim(X) > 1) 
-      print(validDims)
       retMat <- apply(X, validDims, sigmoid.scalar)
       return(retMat)
   }
@@ -70,7 +70,8 @@ softmax.vec <- function(X){
 # (3) Apply another dot product that "learns" how to interpret the embedding
 #       and determine importance
 # 
-alpha <- function(v, nbers.v, tt, Ws, Wd, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
+alpha <- function(v, G, tt, Ws, Wd, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
+    nbers.v <- neighbors(G, vv)
     num.nbers <- length(nbers.v)
     ##### A matricized implementation
     # Get hidden vector h_i for v at time t
@@ -118,14 +119,12 @@ runAlgo <- function(N, updates, hiddenDim){
   #
   for(tt in 1:updates){
       #
-      if(tt > 1){
-        CC[[tt]] <- matrix(nrow = N, ncol = hiddenDim)
-      }
+      CC[[tt + 1]] <- matrix(nrow = N, ncol = hiddenDim)
       #
       for(ii in 1:N){
           # Compute alpha masks
           vv <- V(G)[ii]
-          alph.ret <- alpha(vv, neighbors(G, vv), tt, Ws, Wd, v.weight)
+          alph.ret <- alpha(vv, G, tt, Ws, Wd, v.weight)
           attn <- alph.ret$attn
           h.nber.mat <- alph.ret$h.nber.mat # rows are for each vector
           #
@@ -148,14 +147,14 @@ runAlgo <- function(N, updates, hiddenDim){
           i.gate <- sigmoid(h.temp %*% Wi[[tt]])
           f.gate <- sigmoid(h.temp %*% Wf[[tt]])
           o.gate <- sigmoid(h.temp %*% Wo[[tt]])
-          C.tilde <-tanh   (  h.temp %*% Wc[[tt]])
+          C.tilde <- tanh  (h.temp %*% Wc[[tt]])
           #
           # Update cell
-          CC[[tt]][ii,] <- f.gate * CC[[tt]][ii,] + i.gate * C.tilde
+          CC[[tt + 1]][ii,] <- f.gate * CC[[tt]][ii,] + i.gate * C.tilde
           #
           # Update hidden state
-          V(G)[ii]$vertex_attr[[1]][, tt + 1] <- o.gate * tanh(CC[[tt]][ii,])
-      }
+          V(G)[ii]$vertex_attr[[1]][, tt + 1] <- o.gate * tanh(CC[[tt + 1]][ii,])
+    }
   }
 }
 
