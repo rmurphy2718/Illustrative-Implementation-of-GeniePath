@@ -11,6 +11,8 @@
 # This file makes 2 isomorphic graphs w/ vertex attributes that can be used
 #
 ############################################################
+require(igraph)
+require(hashmap)
 # ========================================
 # Create toy data
 # ========================================
@@ -51,7 +53,7 @@ rowSwaps <- function(mat, swapsMat){
 }
 # Make permutation matrix
 P <- diag(N)
-swaps <- rbind(c(2,4), c(3, 9))
+swaps <- rbind(c(2,4), c(3,9))
 P <- rowSwaps(mat = P, swapsMat = swaps)
 
 A.prime <- P %*% A %*% t(P)

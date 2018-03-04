@@ -113,8 +113,15 @@ runAlgo <- function(N, updates, hiddenDim){
   v.weight <- matrix(ncol = 1, data = rnorm(HIDDEN_DIM, 0, 3))
   #
   #
+  CC <- list()
+  CC[[1]] <- matrix(nrow = N, ncol = hiddenDim, data = 0)
   #
-  for(tt in 1:updates)
+  for(tt in 1:updates){
+      #
+      if(tt > 1){
+        CC[[tt]] <- matrix(nrow = N, ncol = hiddenDim)
+      }
+      #
       for(ii in 1:N){
           # Compute alpha masks
           vv <- V(G)[ii]
@@ -135,6 +142,19 @@ runAlgo <- function(N, updates, hiddenDim){
           summedNbers <- colSums(nber.mask) 
           # finall, get htemp
           h.temp <- summedNbers %*% W[[tt]]
+          #
+          # LSTM Updates
+          #
+          i.gate <- sigmoid(h.temp %*% Wi[[tt]])
+          f.gate <- sigmoid(h.temp %*% Wf[[tt]])
+          o.gate <- sigmoid(h.temp %*% Wo[[tt]])
+          C.tilde <-tanh   (  h.temp %*% Wc[[tt]])
+          #
+          # Update cell
+          CC[[tt]][ii,] <- f.gate * CC[[tt]][ii,] + i.gate * C.tilde
+          #
+          # Update hidden state
+          V(G)[ii]$vertex_attr[[1]][, tt + 1] <- o.gate * tanh(CC[[tt]][ii,])
       }
   }
 }
