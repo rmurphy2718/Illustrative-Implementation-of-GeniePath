@@ -2,18 +2,23 @@
 ############################################################
 # GenieImpl1.R
 # Ryan Murphy
-# Quck and dirty implementation of adaptive path layer from GeniePath
-# "GeniePath: Graph Neural Networks with Adaptive Receptive Paths"
-# Ziqi Liu et al, currently on arXiv.
+# Very simple implementation of forward-pass of adaptive path layer from GeniePath paper
+# AAAI 2019: https://arxiv.org/pdf/1802.00910.pdf
+#
+# Assuming intput is an igraph object with vertex features.
+#
 ############################################################
+
 setwd("/media/TI10716100D/_Files/1_Purdue/_Research/Network_Brain/CONVOLUTIONAL_NNET_GRAPHS/GeniePath/GeniePath_BasicImpl/GeniePath_BasicImpl")
 library(igraph)
 library(hashmap)
-source("GenieMakeData.R")
-# ========================================
-# Algo: Compute all H using adaptive path layers
-# I am ignoring h^(0) = WX, and just simulating h^(0) directly..
-# ========================================
+source("GenieMakeData.R")  
+
+N <- 100
+TOTAL_LAYERS <- 6 # I am including h^(0).  So 3 layers means 2 updates
+UPDATES <- TOTAL_LAYERS - 1 # capital T from the paper
+HIDDEN_DIM <- 8 # assume for now that hidden dim is same as data dim
+
 # ~~~ 
 # Helper functions
 # ~~~ 
@@ -33,9 +38,7 @@ sigmoid <- function(X){
       validDims <- which(dim(X) > 1) 
       retMat <- apply(X, validDims, sigmoid.scalar)
       return(retMat)
-  }
-  #
-  if(class(X) == "numeric"){
+  }else if(class(X) == "numeric"){
       return(sigmoid.scalar(X))
   }
 }
@@ -65,13 +68,13 @@ softmax.vec <- function(X){
 # alpha(v, neighbors(v)) -> a numeric (probability) vector giving importance of each neighbor
 #
 # Explanation of this function, alpha(x,y) from the paper
-# (1) Project x and y into some embedding with Wx and Wy
+# (1) Project x and y into some representation with Wx and Wy
 # (2) Squash them into the range -1 to 1 with tanh
-# (3) Apply another dot product that "learns" how to interpret the embedding
+# (3) Apply another dot product that "learns" how to interpret the representation
 #       and determine importance
 # 
 alpha <- function(v, G, tt, Ws, Wd, v.weight){ # v.weight is just a weight parameter...nothing to do w/ vertex v
-    nbers.v <- neighbors(G, vv)
+    nbers.v <- neighbors(G, v)
     num.nbers <- length(nbers.v)
     ##### A matricized implementation
     # Get hidden vector h_i for v at time t
@@ -88,7 +91,7 @@ alpha <- function(v, G, tt, Ws, Wd, v.weight){ # v.weight is just a weight param
     }
     #
     # Compute the heart of equation (8)
-    EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed embedding of these two hidden vectors
+    EMBED <- tanh(X%*%Ws + Y%*%Wd) # squashed representation of these two hidden vectors
     return(
       list(
         attn = softmax.vec(EMBED %*% v.weight),
@@ -96,11 +99,12 @@ alpha <- function(v, G, tt, Ws, Wd, v.weight){ # v.weight is just a weight param
       )
     )
 }
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Main
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---------------------------------------------------------------
+# Main Algo: Compute all H (hidden layers) using adaptive path layers
+# I am ignoring h^(0) = WX, and just simulating h^(0) directly..
+# ---------------------------------------------------------------
 runAlgo <- function(G, updates, hiddenDim){
-  set.seed(3)
+  set.seed(3)  # use same weight matrices
   N <- length(V(G))
   # Generate weight matrix lists
   # Assume weight matrices are square for now
@@ -161,17 +165,49 @@ runAlgo <- function(G, updates, hiddenDim){
   return(G)
 }
 
+# Compare vertex features at indices i, j in two graphs
+compare <- function(i, j){
+  # G.new and G.prime.new are read from the global...
+  # ...namespace for simplicity
+  all.equal(V(G.new)[i]$vertex_attr,
+            V(G.prime.new)[j]$vertex_attr)
+}
+
+# =============================================================================
+# Main logic begins
+# =============================================================================
+# Create an igraph object with features, G, and an isomorphic graph G.prime
+# >> User can select which rows to swap, to check isomorphic invariance
+# >> Can also swap random rows using sample.
+swaps <- rbind(c(2,4), c(3,9))
+
+print("Making a toy graph and applying an isomorphism to it")
+graph.dat <- make.toy.data(swaps)  
+G <- graph.dat$G
+G.prime <- graph.dat$G.prime 
+
+# run through adaptive path layer.
+print("Forwarding both graphs through the GeniePath layer")
 G.new <- runAlgo(G=G, updates = UPDATES, hiddenDim = HIDDEN_DIM)
 G.prime.new <- runAlgo(G=G.prime, updates = UPDATES, hiddenDim = HIDDEN_DIM)
-
-# Compare hidden states in G.new and G.prime.new
-compare <- function(i, j){
-  all.equal(V(G.new)[i]$vertex_attr,
-      V(G.prime.new)[j]$vertex_attr)
+#
+# Test of isomorphic invariance.
+#
+# Manually check that the vertex attributes are the same in the two graphs
+# (before and after isomorphism),
+# up to relabeled indices.
+#
+print("Testing that vertex representations are the same between two graphs, up to relabeling.")
+comparisons <- list()
+for(ii in 1:N){
+    if(!(ii %in% swaps)){
+      res <- compare(ii, ii)
+      comparisons <- append(comparisons, res)
+    }
 }
-compare(1,1) # Should be true
-compare(20,20)
-compare(2,4) # Should be true
-compare(3,9) # Should be true
-compare(5,6) # Should be false
-compare(6,8) # Should be false
+for(rr in 1:nrow(swaps)){
+  res <- compare(swaps[rr, 1], swaps[rr, 2])
+  comparisons <- append(comparisons, res) 
+}
+print("Test whether the vertex representations are the same between the original and permuted graphs")
+print(all(unlist(comparisons)))
